@@ -1,6 +1,6 @@
 import { ZodError } from "zod";
-
-export const ValidateMiddleware = (schema) => (req, res, next) => {
+import { Request, Response, NextFunction } from "express";
+export const ValidateMiddleware = (schema: any) => (req: Request, res: Response, next: NextFunction) => {
     try {
         schema.parse(req.body);
         return next();
