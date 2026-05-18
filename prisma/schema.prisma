@@ -15,24 +15,21 @@ model history {
   payment_method Int
   overdue        Int
   invoices       invoice @relation(fields: [invoiceId], references: [id])
-
-  @@index([invoiceId], map: "history_invoiceId_fkey")
+  user           user    @relation(fields: [userId], references: [id])
+  userId         Int
 }
 
 model invoice {
   id         Int            @id @default(autoincrement())
-  userId     Int
   clientNama String
-  total      String
-  paid       String
+  amount     Int
+  date       DateTime
+  dueData    DateTime
   status     invoice_status
-  CreateAt   DateTime       @default(now())
-  UpdateAt   DateTime
   histories  history[]
-  user       user           @relation(fields: [userId], references: [id], map: "Invoice_userId_fkey")
+  user       user           @relation(fields: [userId], references: [id])
   queue      queue[]
-
-  @@index([userId], map: "Invoice_userId_fkey")
+  userId     Int
 }
 
 model queue {
@@ -52,12 +49,13 @@ model queuecategory {
 }
 
 model user {
-  id       Int       @id @default(autoincrement())
-  nama     String
-  email    String?   @unique(map: "User_email_key")
-  password String
-  role     user_role @default(user)
-  invoice  invoice[]
+  id        Int       @id @default(autoincrement())
+  nama      String
+  email     String?   @unique(map: "User_email_key")
+  password  String
+  role      user_role @default(user)
+  invoices  invoice[]
+  histories history[]
 }
 
 enum queuecategory_status {
