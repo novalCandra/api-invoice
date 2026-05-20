@@ -1,5 +1,6 @@
 import express from "express"
 import dotenv from "dotenv"
+import cors from "cors"
 import AuthRouter from "./router/AuthRouter.js";
 import InvoiceRouter from "./router/InvoiceRouter.js";
 import HistoryRouter from "./router/HistoryRouter.js";
@@ -9,7 +10,12 @@ const port = 2000;
 
 dotenv.config();
 app.use(express.json())
-
+app.use(cors({
+    origin: [
+        'http://localhost:5173'
+    ],
+    credentials: true
+}))
 app.use("/api", AuthRouter);
 app.use("/api", InvoiceRouter)
 app.use("/api", HistoryRouter)
