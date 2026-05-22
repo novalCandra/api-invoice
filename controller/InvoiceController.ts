@@ -40,7 +40,8 @@ export const getAllInvoiceDetails = async (req: Request, res: Response) => {
 export const postInvoice = async (req: Request, res: Response) => {
     try {
         const userId = Number(req.users?.id)
-        const createInvoice = await postInvoiceServices(userId, req.body)
+        const clientId = Number(req.body.clientId);
+        const createInvoice = await postInvoiceServices(userId, clientId, req.body)
         return res.status(201).json({
             status: true,
             message: "Success Create Invoice",
