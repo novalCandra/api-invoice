@@ -1,9 +1,9 @@
 import prisma from "../config/prisma.js"
-export const getAllServicesHistory = async (userId: number, invoiceId: number) => {
+export const getAllServicesHistory = async (userId: number | undefined, invoiceId: number | undefined) => {
     const dataHistory = await prisma.history.findMany({
         where: {
-            userId,
-            invoiceId
+            ...(userId && { userId }),
+            ...(invoiceId && { invoiceId })
         },
         include: {
             user: {
@@ -27,6 +27,5 @@ export const getAllServicesHistory = async (userId: number, invoiceId: number) =
         const error = new Error("Not get History")
         throw error
     }
-
     return dataHistory;
 }
