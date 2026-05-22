@@ -8,60 +8,134 @@ datasource db {
   provider = "mysql"
 }
 
-model history {
-  id             Int     @id @default(autoincrement())
-  invoiceId      Int
-  total_event    Int
-  payment_method Int
-  overdue        Int
-  invoices       invoice @relation(fields: [invoiceId], references: [id])
-  user           user    @relation(fields: [userId], references: [id])
-  userId         Int
-}
-
 model invoice {
-  id         Int            @id @default(autoincrement())
-  clientNama String
-  amount     Int
-  date       DateTime
-  dueData    DateTime
-  status     invoice_status
-  histories  history[]
-  user       user           @relation(fields: [userId], references: [id])
-  queue      queue[]
-  userId     Int
+  id               Int                 @id @default(autoincrement())
+  client_name      String
+  amount           Decimal
+  date             DateTime
+  dueData          DateTime
+  status           invoice_status
+  description      String?
+  notes            String?
+  paid_at          DateTime?
+  create_at        DateTime            @default(now())
+  update_at        DateTime            @updatedAt
+  user             user                @relation(fields: [userId], references: [id])
+  client           client              @relation(fields: [clientId], references: [id])
+  userId           Int
+  clientId         Int
+  invoiceItems     invoice_items[]
+  invoiceReminders invoice_reminders[]
+  activityLogs     activity_log[]
 }
 
-model queue {
-  id            Int     @id @default(autoincrement())
+model invoice_items {
+  id          Int      @id @default(autoincrement())
+  description String?
+  quantity    Decimal
+  unit_price  Decimal
+  amount      Decimal
+  create_at   DateTime @default(now())
+  user        user     @relation(fields: [userId], references: [id])
+  invoice     invoice  @relation(fields: [invoiceId], references: [id])
+  invoiceId   Int
+  userId      Int
+}
+
+model invoice_reminders {
+  id            Int                   @id @default(autoincrement())
+  reminder_type reminder_type_Invoice
+  sent_at       DateTime?
+  create_at     DateTime              @default(now())
+  invoice       invoice               @relation(fields: [invoiceId], references: [id])
   invoiceId     Int
-  total_pending Int
-  overdue       Int
-  total_amount  Int
-  invoice       invoice @relation(fields: [invoiceId], references: [id], map: "Queue_invoiceId_fkey")
-
-  @@index([invoiceId], map: "Queue_invoiceId_fkey")
 }
 
-model queuecategory {
-  id     Int                  @id @default(autoincrement())
-  status queuecategory_status @default(pending)
+model payments {
+  id                Int             @id @default(autoincrement())
+  user              user            @relation(fields: [userId], references: [id])
+  userId            Int
+  amount            Decimal
+  payment_method    payments_method
+  referencer_number String?
+  notes             String?
+  payment_date      DateTime
+  create_at         DateTime        @default(now())
+}
+
+model activity_log {
+  id          Int              @id @default(autoincrement())
+  user        user             @relation(fields: [userId], references: [id])
+  userId      Int
+  invoice     invoice          @relation(fields: [invoiceId], references: [id])
+  invoiceId   Int
+  event_type  activity_logType
+  event_name  String
+  description String
+  client_name String
+  amount      Decimal
+  details     Json
+  create_at   DateTime         @default(now())
+  event_date  DateTime
+  event_time  DateTime
+}
+
+model conversations {
+  id          Int      @id @default(autoincrement())
+  user        user     @relation(fields: [userId], references: [id])
+  userId      Int
+  client      client   @relation(fields: [clientId], references: [id])
+  clientId    Int
+  client_name String
+  subject     String
+  create_at   DateTime @default(now())
+  update_at   DateTime @updatedAt
+}
+
+model user_preferences {
+  id                         Int                  @id @default(autoincrement())
+  theme                      user_preferencesType
+  notifications_enabled      Boolean
+  email_reminders_enabled    Boolean
+  language                   String
+  timezone                   String
+  company_name               String
+  company_logo_url           String
+  default_payment_terms_days Int
+  create_at                  DateTime             @default(now())
+  update_at                  DateTime             @updatedAt
 }
 
 model user {
-  id        Int       @id @default(autoincrement())
-  nama      String
-  email     String?   @unique(map: "User_email_key")
-  password  String
-  role      user_role @default(user)
-  invoices  invoice[]
-  histories history[]
+  id            Int             @id @default(autoincrement())
+  nama          String
+  email         String?         @unique(map: "User_email_key")
+  password      String
+  role          user_role       @default(user)
+  invoices      invoice[]
+  invoiceItems  invoice_items[]
+  payments      payments[]
+  activityLogs  activity_log[]
+  conversations conversations[]
 }
 
-enum queuecategory_status {
-  urgent
-  pending
-  onTime
+model client {
+  id            Int             @id @default(autoincrement())
+  nama          String
+  email         String?         @unique
+  compay        String?
+  phone         String
+  address       String
+  create_at     DateTime        @default(now())
+  update_at     DateTime        @updatedAt
+  invoices      invoice[]
+  conversations conversations[]
+}
+
+enum reminder_type_Invoice {
+  first
+  second
+  final
 }
 
 enum user_role {
@@ -72,4 +146,28 @@ enum invoice_status {
   paid
   pending
   overide
+}
+
+enum payments_method {
+  bank_transfer
+  credit_card
+  check
+  cash
+  other
+}
+
+enum activity_logType {
+  created
+  paid
+  pending
+  overdue
+  modified
+  sent
+  viewed
+  downloaded
+}
+
+enum user_preferencesType {
+  dark
+  light
 }
