@@ -19,4 +19,15 @@ declare namespace Express {
             dueData: Date;
         }
     }
+
+    export interface Request {
+        client?: {
+            id: number;
+            nama: string | null;
+            email: string | null;
+            compay: string | null;
+            phone: string | null;
+            address: string | null
+        }
+    }
 }

@@ -3,7 +3,8 @@ import { AllInvoiceData, InvoiceDataDetails, postInvoiceServices } from "../serv
 export const getAllInvoice = async (req: Request, res: Response) => {
     try {
         const userId = Number(req.users?.id)
-        const InvoiceAll = await AllInvoiceData(userId);
+        const clientId = Number(req.client?.id)
+        const InvoiceAll = await AllInvoiceData(userId, clientId);
         return res.status(200).json({
             status: true,
             message: "Success All Invoice",
