@@ -94,6 +94,8 @@ model conversations {
 
 model user_preferences {
   id                         Int                  @id @default(autoincrement())
+  user                       user                 @relation(fields: [userId], references: [id])
+  userId                     Int
   theme                      user_preferencesType
   notifications_enabled      Boolean
   email_reminders_enabled    Boolean
@@ -107,16 +109,17 @@ model user_preferences {
 }
 
 model user {
-  id            Int             @id @default(autoincrement())
-  nama          String
-  email         String?         @unique(map: "User_email_key")
-  password      String
-  role          user_role       @default(user)
-  invoices      invoice[]
-  invoiceItems  invoice_items[]
-  payments      payments[]
-  activityLogs  activity_log[]
-  conversations conversations[]
+  id              Int                @id @default(autoincrement())
+  nama            String
+  email           String?            @unique(map: "User_email_key")
+  password        String
+  role            user_role          @default(user)
+  invoices        invoice[]
+  invoiceItems    invoice_items[]
+  payments        payments[]
+  activityLogs    activity_log[]
+  conversations   conversations[]
+  userPreferences user_preferences[]
 }
 
 model client {
