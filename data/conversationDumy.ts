@@ -11,6 +11,6 @@ export function conversationDumy() {
             max: 10
         }),
         client_name: faker.internet.username(),
-        subject: faker.lorem.text(),
+        subject: faker.lorem.sentence(),
     }
 }

@@ -8,6 +8,8 @@ import { dataDumyInvoiceReminder } from "../../data/InvoiceReminderDumy.js";
 import { PaymentDumy } from "../../data/PaymentDumy.js";
 import { user_preferencesDumy } from "../../data/user_preferencesDumy.js";
 import { ActivitiyLogDumy } from "../../data/ActivitiLog.js";
+import { DumyInvoiceCustomization } from "../../data/invoiceCustomization.js";
+import { conversationDumy } from "../../data/conversationDumy.js";
 console.log("check data seeder")
 export async function main() {
     try {
@@ -16,9 +18,11 @@ export async function main() {
         const invoices = [];
         const invoicesItems = [];
         const invoicesRemimbers = [];
+        const invoice_customization = [];
         const payments = [];
         const userPreferences = [];
         const logAktivitas = [];
+        const conversation = [];
         for (let i = 0; i < 3; i++) {
             const userData = await RandomDumyUser();
             const randomCreateUser = await prisma.user.create({
@@ -109,6 +113,33 @@ export async function main() {
                 }
             })
             logAktivitas.push(randomDataLog)
+        }
+
+        for (let i = 0; i < 3; i++) {
+            const randomInvoice = invoices[Math.floor(Math.random() * invoices.length)];
+            const dataRandomInvoiceTheme = await prisma.invoice_customizations.create({
+                data: {
+                    ...DumyInvoiceCustomization(),
+                    invoiceId: randomInvoice.id
+                }
+            })
+
+            invoice_customization.push(dataRandomInvoiceTheme);
+        }
+
+        for (let i = 0; i < 3; i++) {
+            const randomUser = user[Math.floor(Math.random() * user.length)];
+            const randomCliet = client[Math.floor(Math.random() * client.length)];
+
+            const randomconversations = await prisma.conversations.create({
+                data: {
+                    ...conversationDumy(),
+                    userId: randomUser.id,
+                    clientId: randomCliet.id
+                }
+            })
+
+            conversation.push(randomconversations)
         }
         console.log('✅ Success Create Seeder')
     } catch (error) {
