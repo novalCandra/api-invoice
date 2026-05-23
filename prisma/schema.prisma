@@ -9,24 +9,25 @@ datasource db {
 }
 
 model invoice {
-  id               Int                 @id @default(autoincrement())
-  client_name      String
-  amount           Decimal
-  date             DateTime
-  dueData          DateTime
-  status           invoice_status
-  description      String?
-  notes            String?
-  paid_at          DateTime?
-  create_at        DateTime            @default(now())
-  update_at        DateTime            @updatedAt
-  user             user                @relation(fields: [userId], references: [id])
-  client           client              @relation(fields: [clientId], references: [id])
-  userId           Int
-  clientId         Int
-  invoiceItems     invoice_items[]
-  invoiceReminders invoice_reminders[]
-  activityLogs     activity_log[]
+  id                    Int                      @id @default(autoincrement())
+  client_name           String
+  amount                Decimal
+  date                  DateTime
+  dueData               DateTime
+  status                invoice_status
+  description           String?
+  notes                 String?
+  paid_at               DateTime?
+  create_at             DateTime                 @default(now())
+  update_at             DateTime                 @updatedAt
+  user                  user                     @relation(fields: [userId], references: [id])
+  client                client                   @relation(fields: [clientId], references: [id])
+  userId                Int
+  clientId              Int
+  invoiceItems          invoice_items[]
+  invoiceReminders      invoice_reminders[]
+  activityLogs          activity_log[]
+  invoiceCustomizations invoice_customizations[]
 }
 
 model invoice_items {
@@ -49,6 +50,18 @@ model invoice_reminders {
   create_at     DateTime              @default(now())
   invoice       invoice               @relation(fields: [invoiceId], references: [id])
   invoiceId     Int
+}
+
+model invoice_customizations {
+  id               Int      @id @default(autoincrement())
+  invoice          invoice  @relation(fields: [invoiceId], references: [id])
+  invoiceId        Int
+  background_color String
+  text_color       String
+  accent_color     String
+  custom_colors    Boolean
+  create_at        DateTime @default(now())
+  update_at        DateTime @updatedAt
 }
 
 model payments {
