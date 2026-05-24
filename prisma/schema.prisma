@@ -9,25 +9,28 @@ datasource db {
 }
 
 model invoice {
-  id                    Int                      @id @default(autoincrement())
-  client_name           String
-  amount                Decimal
-  date                  DateTime
-  dueData               DateTime
-  status                invoice_status
-  description           String?
-  notes                 String?
-  paid_at               DateTime?
-  create_at             DateTime                 @default(now())
-  update_at             DateTime                 @updatedAt
-  user                  user                     @relation(fields: [userId], references: [id])
-  client                client                   @relation(fields: [clientId], references: [id])
-  userId                Int
-  clientId              Int
-  invoiceItems          invoice_items[]
-  invoiceReminders      invoice_reminders[]
-  activityLogs          activity_log[]
-  invoiceCustomizations invoice_customizations[]
+  id               Int                      @id @default(autoincrement())
+  userId           Int
+  status           invoice_status
+  amount           Decimal
+  date             DateTime
+  dueData          DateTime
+  clientId         Int
+  client_name      String
+  create_at        DateTime                 @default(now())
+  description      String?
+  notes            String?
+  paid_at          DateTime?
+  update_at        DateTime                 @updatedAt
+  activityLogs     activity_log[]
+  client           client                   @relation(fields: [clientId], references: [id])
+  user             user                     @relation(fields: [userId], references: [id])
+  customization    invoice_customizations[]
+  items            invoice_items[]
+  invoiceReminders invoice_reminders[]
+
+  @@index([userId], map: "Invoice_userId_fkey")
+  @@index([clientId], map: "invoice_clientId_fkey")
 }
 
 model invoice_items {
@@ -37,10 +40,13 @@ model invoice_items {
   unit_price  Decimal
   amount      Decimal
   create_at   DateTime @default(now())
-  user        user     @relation(fields: [userId], references: [id])
-  invoice     invoice  @relation(fields: [invoiceId], references: [id])
   invoiceId   Int
   userId      Int
+  invoice     invoice  @relation(fields: [invoiceId], references: [id])
+  user        user     @relation(fields: [userId], references: [id])
+
+  @@index([invoiceId], map: "invoice_items_invoiceId_fkey")
+  @@index([userId], map: "invoice_items_userId_fkey")
 }
 
 model invoice_reminders {
@@ -48,13 +54,14 @@ model invoice_reminders {
   reminder_type reminder_type_Invoice
   sent_at       DateTime?
   create_at     DateTime              @default(now())
-  invoice       invoice               @relation(fields: [invoiceId], references: [id])
   invoiceId     Int
+  invoice       invoice               @relation(fields: [invoiceId], references: [id])
+
+  @@index([invoiceId], map: "invoice_reminders_invoiceId_fkey")
 }
 
 model invoice_customizations {
   id               Int      @id @default(autoincrement())
-  invoice          invoice  @relation(fields: [invoiceId], references: [id])
   invoiceId        Int
   background_color String
   text_color       String
@@ -62,11 +69,13 @@ model invoice_customizations {
   custom_colors    Boolean
   create_at        DateTime @default(now())
   update_at        DateTime @updatedAt
+  invoice          invoice  @relation(fields: [invoiceId], references: [id])
+
+  @@index([invoiceId], map: "invoice_customizations_invoiceId_fkey")
 }
 
 model payments {
   id                Int             @id @default(autoincrement())
-  user              user            @relation(fields: [userId], references: [id])
   userId            Int
   amount            Decimal
   payment_method    payments_method
@@ -74,13 +83,14 @@ model payments {
   notes             String?
   payment_date      DateTime
   create_at         DateTime        @default(now())
+  user              user            @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "payments_userId_fkey")
 }
 
 model activity_log {
   id          Int              @id @default(autoincrement())
-  user        user             @relation(fields: [userId], references: [id])
   userId      Int
-  invoice     invoice          @relation(fields: [invoiceId], references: [id])
   invoiceId   Int
   event_type  activity_logType
   event_name  String
@@ -91,24 +101,30 @@ model activity_log {
   create_at   DateTime         @default(now())
   event_date  DateTime
   event_time  DateTime
+  invoice     invoice          @relation(fields: [invoiceId], references: [id])
+  user        user             @relation(fields: [userId], references: [id])
+
+  @@index([invoiceId], map: "activity_log_invoiceId_fkey")
+  @@index([userId], map: "activity_log_userId_fkey")
 }
 
 model conversations {
   id          Int      @id @default(autoincrement())
-  user        user     @relation(fields: [userId], references: [id])
   userId      Int
-  client      client   @relation(fields: [clientId], references: [id])
   clientId    Int
   client_name String
   subject     String
   create_at   DateTime @default(now())
   update_at   DateTime @updatedAt
+  client      client   @relation(fields: [clientId], references: [id])
+  user        user     @relation(fields: [userId], references: [id])
+
+  @@index([clientId], map: "conversations_clientId_fkey")
+  @@index([userId], map: "conversations_userId_fkey")
 }
 
 model user_preferences {
   id                         Int                  @id @default(autoincrement())
-  user                       user                 @relation(fields: [userId], references: [id])
-  userId                     Int
   theme                      user_preferencesType
   notifications_enabled      Boolean
   email_reminders_enabled    Boolean
@@ -119,6 +135,10 @@ model user_preferences {
   default_payment_terms_days Int
   create_at                  DateTime             @default(now())
   update_at                  DateTime             @updatedAt
+  userId                     Int
+  user                       user                 @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "user_preferences_userId_fkey")
 }
 
 model user {
@@ -127,11 +147,11 @@ model user {
   email           String?            @unique(map: "User_email_key")
   password        String
   role            user_role          @default(user)
+  activityLogs    activity_log[]
+  conversations   conversations[]
   invoices        invoice[]
   invoiceItems    invoice_items[]
   payments        payments[]
-  activityLogs    activity_log[]
-  conversations   conversations[]
   userPreferences user_preferences[]
 }
 
@@ -144,8 +164,8 @@ model client {
   address       String
   create_at     DateTime        @default(now())
   update_at     DateTime        @updatedAt
-  invoices      invoice[]
   conversations conversations[]
+  invoices      invoice[]
 }
 
 enum reminder_type_Invoice {
