@@ -8,60 +8,170 @@ datasource db {
   provider = "mysql"
 }
 
-model history {
-  id             Int     @id @default(autoincrement())
-  invoiceId      Int
-  total_event    Int
-  payment_method Int
-  overdue        Int
-  invoices       invoice @relation(fields: [invoiceId], references: [id])
-  user           user    @relation(fields: [userId], references: [id])
-  userId         Int
-}
-
 model invoice {
-  id         Int            @id @default(autoincrement())
-  clientNama String
-  amount     Int
-  date       DateTime
-  dueData    DateTime
-  status     invoice_status
-  histories  history[]
-  user       user           @relation(fields: [userId], references: [id])
-  queue      queue[]
-  userId     Int
+  id               Int                      @id @default(autoincrement())
+  userId           Int
+  status           invoice_status
+  amount           Decimal
+  date             DateTime
+  dueData          DateTime
+  clientId         Int
+  client_name      String
+  create_at        DateTime                 @default(now())
+  description      String?
+  notes            String?
+  paid_at          DateTime?
+  update_at        DateTime                 @updatedAt
+  activityLogs     activity_log[]
+  client           client                   @relation(fields: [clientId], references: [id])
+  user             user                     @relation(fields: [userId], references: [id])
+  customization    invoice_customizations[]
+  items            invoice_items[]
+  invoiceReminders invoice_reminders[]
+
+  @@index([userId], map: "Invoice_userId_fkey")
+  @@index([clientId], map: "invoice_clientId_fkey")
 }
 
-model queue {
-  id            Int     @id @default(autoincrement())
+model invoice_items {
+  id          Int      @id @default(autoincrement())
+  description String?
+  quantity    Decimal
+  unit_price  Decimal
+  amount      Decimal
+  create_at   DateTime @default(now())
+  invoiceId   Int
+  userId      Int
+  invoice     invoice  @relation(fields: [invoiceId], references: [id])
+  user        user     @relation(fields: [userId], references: [id])
+
+  @@index([invoiceId], map: "invoice_items_invoiceId_fkey")
+  @@index([userId], map: "invoice_items_userId_fkey")
+}
+
+model invoice_reminders {
+  id            Int                   @id @default(autoincrement())
+  reminder_type reminder_type_Invoice
+  sent_at       DateTime?
+  create_at     DateTime              @default(now())
   invoiceId     Int
-  total_pending Int
-  overdue       Int
-  total_amount  Int
-  invoice       invoice @relation(fields: [invoiceId], references: [id], map: "Queue_invoiceId_fkey")
+  invoice       invoice               @relation(fields: [invoiceId], references: [id])
 
-  @@index([invoiceId], map: "Queue_invoiceId_fkey")
+  @@index([invoiceId], map: "invoice_reminders_invoiceId_fkey")
 }
 
-model queuecategory {
-  id     Int                  @id @default(autoincrement())
-  status queuecategory_status @default(pending)
+model invoice_customizations {
+  id               Int      @id @default(autoincrement())
+  invoiceId        Int
+  background_color String
+  text_color       String
+  accent_color     String
+  custom_colors    Boolean
+  create_at        DateTime @default(now())
+  update_at        DateTime @updatedAt
+  invoice          invoice  @relation(fields: [invoiceId], references: [id])
+
+  @@index([invoiceId], map: "invoice_customizations_invoiceId_fkey")
+}
+
+model payments {
+  id                Int             @id @default(autoincrement())
+  userId            Int
+  amount            Decimal
+  payment_method    payments_method
+  referencer_number String?
+  notes             String?
+  payment_date      DateTime
+  create_at         DateTime        @default(now())
+  user              user            @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "payments_userId_fkey")
+}
+
+model activity_log {
+  id          Int              @id @default(autoincrement())
+  userId      Int
+  invoiceId   Int
+  event_type  activity_logType
+  event_name  String
+  description String
+  client_name String
+  amount      Decimal
+  details     Json
+  create_at   DateTime         @default(now())
+  event_date  DateTime
+  event_time  DateTime
+  invoice     invoice          @relation(fields: [invoiceId], references: [id])
+  user        user             @relation(fields: [userId], references: [id])
+
+  @@index([invoiceId], map: "activity_log_invoiceId_fkey")
+  @@index([userId], map: "activity_log_userId_fkey")
+}
+
+model conversations {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  clientId    Int
+  client_name String
+  subject     String
+  create_at   DateTime @default(now())
+  update_at   DateTime @updatedAt
+  client      client   @relation(fields: [clientId], references: [id])
+  user        user     @relation(fields: [userId], references: [id])
+
+  @@index([clientId], map: "conversations_clientId_fkey")
+  @@index([userId], map: "conversations_userId_fkey")
+}
+
+model user_preferences {
+  id                         Int                  @id @default(autoincrement())
+  theme                      user_preferencesType
+  notifications_enabled      Boolean
+  email_reminders_enabled    Boolean
+  language                   String
+  timezone                   String
+  company_name               String
+  company_logo_url           String
+  default_payment_terms_days Int
+  create_at                  DateTime             @default(now())
+  update_at                  DateTime             @updatedAt
+  userId                     Int
+  user                       user                 @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "user_preferences_userId_fkey")
 }
 
 model user {
-  id        Int       @id @default(autoincrement())
-  nama      String
-  email     String?   @unique(map: "User_email_key")
-  password  String
-  role      user_role @default(user)
-  invoices  invoice[]
-  histories history[]
+  id              Int                @id @default(autoincrement())
+  nama            String
+  email           String?            @unique(map: "User_email_key")
+  password        String
+  role            user_role          @default(user)
+  activityLogs    activity_log[]
+  conversations   conversations[]
+  invoices        invoice[]
+  invoiceItems    invoice_items[]
+  payments        payments[]
+  userPreferences user_preferences[]
 }
 
-enum queuecategory_status {
-  urgent
-  pending
-  onTime
+model client {
+  id            Int             @id @default(autoincrement())
+  nama          String
+  email         String?         @unique
+  compay        String?
+  phone         String
+  address       String
+  create_at     DateTime        @default(now())
+  update_at     DateTime        @updatedAt
+  conversations conversations[]
+  invoices      invoice[]
+}
+
+enum reminder_type_Invoice {
+  first
+  second
+  final
 }
 
 enum user_role {
@@ -72,4 +182,28 @@ enum invoice_status {
   paid
   pending
   overide
+}
+
+enum payments_method {
+  bank_transfer
+  credit_card
+  check
+  cash
+  other
+}
+
+enum activity_logType {
+  created
+  paid
+  pending
+  overdue
+  modified
+  sent
+  viewed
+  downloaded
+}
+
+enum user_preferencesType {
+  dark
+  light
 }

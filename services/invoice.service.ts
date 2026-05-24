@@ -1,9 +1,10 @@
 import { invoice_status } from "../generated/prisma/enums.js";
 import prisma from "../config/prisma.js";
-export const AllInvoiceData = async (userId: number) => {
+export const AllInvoiceData = async (userId: number, clientId: number) => {
     const InvoiceAll = await prisma.invoice.findMany({
         where: {
-            userId
+            userId,
+            ...(clientId && { clientId })
         },
         include: {
             user: {
@@ -12,6 +13,15 @@ export const AllInvoiceData = async (userId: number) => {
                     nama: true,
                     email: true,
                     role: true
+                }
+            },
+            client: {
+                select: {
+                    id: true,
+                    nama: true,
+                    email: true,
+                    phone: true,
+                    compay: true
                 }
             }
         }
@@ -37,6 +47,15 @@ export const InvoiceDataDetails = async (id: number) => {
                     email: true,
                     role: true
                 }
+            },
+            client: {
+                select: {
+                    id: true,
+                    nama: true,
+                    email: true,
+                    phone: true,
+                    compay: true
+                }
             }
         }
     })
@@ -49,13 +68,17 @@ export const InvoiceDataDetails = async (id: number) => {
     return detailInvoice
 }
 
-export const postInvoiceServices = async (userId: number, body: { clientNama: string, status: string, amount: number, date: string, dueData: string }) => {
-    const { clientNama, status, amount, date, dueData } = body;
+export const postInvoiceServices = async (userId: number, clientId: number, body: { client_name: string, status: string, amount: number, date: string, dueData: string, description: string, notes: string }) => {
+    const { client_name, status, amount, date, dueData, description, notes } = body;
     const createInvoice = await prisma.invoice.create({
         data: {
-            clientNama, status: status as invoice_status, amount, date: new Date(date), dueData: new Date(dueData), user: {
+            client_name, status: status as invoice_status, amount, date: new Date(date), dueData: new Date(dueData), description, notes, user: {
                 connect: {
                     id: userId
+                },
+            }, client: {
+                connect: {
+                    id: clientId
                 }
             }
         },
@@ -64,6 +87,15 @@ export const postInvoiceServices = async (userId: number, body: { clientNama: st
                 select: {
                     id: true,
                     nama: true
+                }
+            },
+            client: {
+                select: {
+                    id: true,
+                    nama: true,
+                    email: true,
+                    phone: true,
+                    compay: true
                 }
             }
         }

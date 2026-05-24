@@ -1,5 +1,5 @@
 import prisma from "../config/prisma.js"
-export const getAllQueueServices = async (invoiceId: number) => {
+export const getAllQueueServices = async (invoiceId: number | undefined) => {
     const allQueqe = await prisma.queue.findMany({
         where: {
             invoiceId
