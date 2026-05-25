@@ -38,7 +38,7 @@ model invoice_items {
   description String?
   quantity    Decimal
   unit_price  Decimal
-  amount      Decimal
+  amount      Decimal?
   create_at   DateTime @default(now())
   invoiceId   Int
   userId      Int
