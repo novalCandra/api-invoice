@@ -1,5 +1,6 @@
 import prisma from "../config/prisma.js"
 import { InvoiceItemRespoDto } from "../src/dto/InoiceItem.dto.js";
+import { NotFoundError } from "../src/errors/not-found-error.js";
 export const getDataInvoiceItemServices = async (userId: number, invoiceId: number) => {
     const getAllInvoice = await prisma.invoice_items.findMany({
         where: {
@@ -23,9 +24,10 @@ export const getDataInvoiceItemServices = async (userId: number, invoiceId: numb
         }
     })
 
-    if (!getAllInvoice) {
-        const error = new Error("Set Internal Error");
-        throw error
+    if (getAllInvoice.length === 0) {
+        throw new NotFoundError(
+            `Invoice with ID ${invoiceId} not found`
+        )
     }
     return getAllInvoice.map(
         item => new InvoiceItemRespoDto(item)
