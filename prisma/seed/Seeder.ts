@@ -80,10 +80,12 @@ export async function main() {
 
         for (let i = 0; i < 3; i++) {
             const randomUser = user[Math.floor(Math.random() * user.length)];
+            const randomInvoice = invoices[Math.floor(Math.random() * invoices.length)];
             const randomPayments = await prisma.payments.create({
                 data: {
                     ...PaymentDumy(),
-                    userId: randomUser.id
+                    userId: randomUser.id,
+                    invoiceId: randomInvoice.id
                 }
             })
 

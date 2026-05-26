@@ -28,6 +28,7 @@ model invoice {
   customization    invoice_customizations[]
   items            invoice_items[]
   invoiceReminders invoice_reminders[]
+  payments         payments[]
 
   @@index([userId], map: "Invoice_userId_fkey")
   @@index([clientId], map: "invoice_clientId_fkey")
@@ -38,7 +39,7 @@ model invoice_items {
   description String?
   quantity    Decimal
   unit_price  Decimal
-  amount      Decimal
+  amount      Decimal?
   create_at   DateTime @default(now())
   invoiceId   Int
   userId      Int
@@ -77,15 +78,15 @@ model invoice_customizations {
 model payments {
   id                Int             @id @default(autoincrement())
   userId            Int
+  invoiceId         Int
   amount            Decimal
   payment_method    payments_method
   referencer_number String?
   notes             String?
-  payment_date      DateTime
+  payment_date      DateTime        @db.Date
   create_at         DateTime        @default(now())
   user              user            @relation(fields: [userId], references: [id])
-
-  @@index([userId], map: "payments_userId_fkey")
+  invoice           invoice         @relation(fields: [invoiceId], references: [id])
 }
 
 model activity_log {
