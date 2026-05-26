@@ -83,7 +83,7 @@ model payments {
   payment_method    payments_method
   referencer_number String?
   notes             String?
-  payment_date      DateTime
+  payment_date      DateTime        @db.Date
   create_at         DateTime        @default(now())
   user              user            @relation(fields: [userId], references: [id])
   invoice           invoice         @relation(fields: [invoiceId], references: [id])
