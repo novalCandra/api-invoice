@@ -2,54 +2,57 @@ import puppeteer from "puppeteer"
 import { Prisma } from "../generated/prisma/client.js";
 
 type Invoice = Prisma.invoiceGetPayload<{
-  include: {
-    items: true;
-    client: true;
-    user: {
-      select: {
-        id: true;
-        nama: true;
-        email: true;
-        role: true;
-      };
+    include: {
+        items: true;
+        client: true;
+        user: {
+            select: {
+                id: true;
+                nama: true;
+                email: true;
+                role: true;
+            };
+        };
+        customization: true;
     };
-    customization: true;
-  };
 }>;
 export const generateInvoicePDFHelper = async (invoice: Invoice): Promise<Buffer> => {
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  })
+    const browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    })
 
-  const page = await browser.newPage();
+    const page = await browser.newPage();
+    await page.emulateMediaType('print');
+    const html = buildInvoiceHTML(invoice);
+    await page.setContent(html, { waitUntil: "load" });
+    await page.setViewport({ width: 794, height: 1123 });
+    const pdfBuffer = await page.pdf({
+        format: "A4",
+        printBackground: true,
+        margin: { top: 0, right: 0, bottom: 0, left: 0 }
+    })
 
-  const html = buildInvoiceHTML(invoice);
-  await page.setContent(html, { waitUntil: "networkidle0" });
-
-  const pdfBuffer = await page.pdf({
-    format: "A4",
-    printBackground: true,
-    margin: { top: '20mm', bottom: '20mm', left: '15mm', right: '15mm' }
-  })
-
-  await browser.close();
-  return Buffer.from(pdfBuffer)
+    await browser.close();
+    return Buffer.from(pdfBuffer)
 }
 
+const formatDate = (dateStr: string | Date) => new Date(dateStr).toLocaleString('id-ID', {
+    day: "2-digit", month: "long", year: "numeric"
+})
 const buildInvoiceHTML = (invoice: Invoice) => {
-  const style = invoice.customization?.[0] ?? {
-    text_color: "#000000",
-    background_color: "#ffffff",
-    accent_color: "#4f46e5",
-  };
-  const itemsHTML = invoice.items
-    .map((item) => {
-      const qty = Number(item.quantity);
-      const unitPrice = Number(item.unit_price);
-      const subtotal = qty * unitPrice;
+    const style = invoice.customization?.[0] ?? {
+        text_color: "#000000",
+        background_color: "#ffffff",
+        accent_color: "#4f46e5",
+    };
+    const itemsHTML = invoice.items
+        .map((item) => {
+            const qty = Number(item.quantity);
+            const unitPrice = Number(item.unit_price);
+            const subtotal = qty * unitPrice;
 
-      return `
+            return `
         <tr>
           <td>${item.description}</td>
           <td style="text-align:center">${qty}</td>
@@ -57,162 +60,227 @@ const buildInvoiceHTML = (invoice: Invoice) => {
           <td style="text-align:right">Rp ${subtotal.toLocaleString("id-ID")}</td>
         </tr>
       `;
-    })
-    .join("");
+        })
+        .join("");
+    return `
+<!DOCTYPE html>
+<html lang="en">
 
-  const formatDate = (dateStr: string) => new Date(dateStr).toLocaleString("id-ID", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric"
-  })
-  return `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="UTF-8" />
-        <style>
-          * { box-sizing: border-box; margin: 0; padding: 0; }
-          body {
-            font-family: Arial, sans-serif;
-            padding: 40px;
-            background-color: ${style.background_color};
-            color: ${style.text_color};
-          }
-          .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 32px;
-            padding-bottom: 16px;
-            border-bottom: 3px solid black;
-          }
-          .invoice-title { font-size: 28px; font-weight: bold; color: black; }
-          .invoice-id { font-size: 14px; color: black; margin-top: 4px; font-weight : bold; }
-          .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: bold;
-            text-transform: uppercase;
-            background-color: ${invoice.status === "paid" ? "#dcfce7" : "#fef9c3"};
-            color: ${invoice.status === "paid" ? "#166534" : "#854d0e"};
-          }
-          .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            margin-bottom: 32px;
-          }
-          .info-box h3 {
-            font-size: 11px;
-            text-transform: uppercase;
-            color: #999;
-            margin-bottom: 8px;
-            letter-spacing: 0.5px;
-          }
-          .info-box p { font-size: 14px; line-height: 1.6; }
-          .info-box .name { font-weight: bold; font-size: 15px; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
-          thead tr { background-color: ${style.accent_color}; }
-          thead th {
-            padding: 10px 12px;
-            text-align: left;
-            font-size: 13px;
-            color: #000;
-          }
-          tbody tr:nth-child(even) { background-color: #f9f9f9; }
-          tbody td { padding: 10px 12px; font-size: 13px; border-bottom: 1px solid #eee; }
-          .totals { margin-left: auto; width: 280px; }
-          .totals-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 6px 0;
-            font-size: 14px;
-            border-bottom: 1px solid #eee;
-          }
-          .totals-row.grand {
-            font-weight: bold;
-            font-size: 16px;
-            border-bottom: none;
-            padding-top: 10px;
-            color: ${style.accent_color};
-          }
-          .notes {
-            margin-top: 32px;
-            padding: 16px;
-            background: #f9f9f9;
-            border-left: 4px solid ${style.accent_color};
-            font-size: 13px;
-          }
-          .notes h4 { margin-bottom: 6px; font-size: 12px; text-transform: uppercase; color: #999; }
-        </style>
-      </head>
-      <body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap" rel="stylesheet">
+</head>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Quicksand', sans-serif;
+}
 
-        <!-- Header -->
-        <div class="header">
-          <div>
-            <div class="invoice-title">INVOICE</div>
-            <div class="invoice-id">INV-${String(invoice.id).padStart(4, "0")}</div>
-            <div style="margin-top:8px">
-              <span class="status-badge">${invoice.status}</span>
+.a4 {
+    width: 210mm;
+    min-height: 297mm;
+    margin: auto;
+    background: white;
+    padding: 20mm;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+}
+
+@media print {
+    @page {
+        size: A4;
+        margin: 0;
+    }
+
+    body {
+        width: 210mm;
+        height: 297mm;
+        padding: 0;
+        margin : 0;
+    }
+
+      .a4 {
+        box-shadow: none;
+        margin: 0;
+        width: 100%;
+        min-height: 100%;
+    }
+}
+
+/* Header */
+.header {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 3px solid black;
+}
+
+.header h3 {
+    font-size: 3rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+}
+
+.header .invoice-number {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+.header nav {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+.header nav .nav-col p {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #333;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+}
+
+.header nav .nav-col h4 {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+/* Details row */
+.details-row {
+    display : flex;
+    gap: 3rem;
+    padding: 2rem 0;
+    border-bottom: 3px solid black;
+    text-align: center;
+    justify-content : center;
+    margin : auto;
+}
+
+.details-row .detail-col p.label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: #333;
+    text-align: center;
+    margin-bottom: 6px;
+}
+
+.details-row .detail-col p.value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.details-row .detail-col .status-badge {
+    display: inline-block;
+    background-color: ${style.background_color};
+    color: black;
+    font-weight: 700;
+    font-size: 1rem;
+    text-align: center;
+    padding: 4px 14px;
+    border-radius: 4px;
+    border: 2px solid black;
+}
+
+/* Amount box */
+.layout-kotak {
+    display: flex;
+    padding-top: 2rem;
+    padding-bottom: 5rem;
+    border-bottom: 3px solid black;
+}
+
+.kotak-amount {
+    border: 3px solid black;
+    width: 100%;
+    padding: 1.5rem 2rem;
+}
+
+.kotak-amount p {
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.kotak-amount h3 {
+    font-size: 3rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+}
+
+/* Footer */
+footer {
+    padding-top: 2rem;
+    text-align: center;
+}
+
+footer p {
+    font-weight: 700;
+    font-size: 1rem;
+}
+</style>
+<body>
+<div class="a4">
+
+    <!-- Header -->
+    <div class="header">
+        <h3>INVOICE</h3>
+        <span class="invoice-number">INV-${String(invoice.id).padStart(4, "0")}</span>
+        <nav>
+            <div class="nav-col">
+                <p>FROM</p>
+                <h4>${invoice.client.compay}</h4>
             </div>
-          </div>
-          <div style="text-align:right; font-size:13px; color:#666;">
-            <p><strong>${invoice.user.nama}</strong></p>
-            <p>${invoice.user.email}</p>
-          </div>
+            <div class="nav-col" style="text-align: right;">
+                <p>BILL TO</p>
+                <h4>${invoice.client_name}</h4>
+            </div>
+        </nav>
+    </div>
+    <!-- end header -->
+
+    <!-- Details Row -->
+    <div class="details-row">
+        <div class="detail-col">
+            <p class="label">INVOICE DATE</p>
+            <p class="value">${formatDate(invoice.date)}</p>
         </div>
-
-        <!-- Info Grid -->
-        <div class="info-grid">
-          <div class="info-box">
-            <h3>Bill To</h3>
-            <p class="name">${invoice.client.nama}</p>
-            <p>${invoice.client.email}</p>
-            <p>${invoice.client.phone}</p>
-            <p>${invoice.client.compay}</p>
-          </div>
-          <div class="info-box">
-            <h3>Invoice Details</h3>
-            <p><strong>Issue Date:</strong> ${invoice.date}</p>
-            <p><strong>Due Date:</strong> ${invoice.dueData}</p>
-            <p><strong>Description:</strong> ${invoice.description}</p>
-          </div>
+        <div class="detail-col">
+            <p class="label">DUE DATE</p>
+            <p class="value">${formatDate(invoice.dueData)}</p>
         </div>
-
-        <!-- Items Table -->
-        <table>
-          <thead>
-            <tr>
-              <th>Description</th>
-              <th style="text-align:center">Qty</th>
-              <th style="text-align:right">Unit Price</th>
-              <th style="text-align:right">Subtotal</th>
-            </tr>
-          </thead>
-          <tbody>${itemsHTML}</tbody>
-        </table>
-
-        <!-- Total -->
-        <div class="totals">
-          <div class="totals-row grand">
-            <span>Grand Total</span>
-            <span>Rp ${Number(invoice.amount).toLocaleString("id-ID")}</span>
-          </div>
+        <div class="detail-col">
+            <p class="label">STATUS</p>
+            <span class="status-badge">${invoice.status}</span>
         </div>
+    </div>
+    <!-- end details row -->
 
-        <!-- Notes -->
-        ${invoice.notes ? `
-          <div class="notes">
-            <h4>Notes</h4>
-            <p>${invoice.notes}</p>
-          </div>
-        ` : ""}
+    <!-- Amount Box -->
+    <div class="layout-kotak">
+        <div class="kotak-amount">
+            <p>TOTAL AMOUNT</p>
+            <h3>Rp.${invoice.amount}</h3>
+        </div>
+    </div>
+    <!-- end amount box -->
 
-      </body>
-    </html>
-    `
+    <!-- Footer -->
+    <footer>
+        <p>Thank you for your business</p>
+    </footer>
+
+</div>
+</body>
+</html>
+   `
 }
 // module.exports = generateInvoicePDFHelper

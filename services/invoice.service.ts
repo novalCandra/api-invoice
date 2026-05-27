@@ -35,6 +35,29 @@ export const AllInvoiceData = async (userId: number, clientId: number) => {
     return InvoiceAll;
 }
 
+export const InvoicePdf = async (userId: number, id: number) => {
+    const getInvoicePDF = await prisma.invoice.findFirst({
+        where: {
+            id,
+            userId
+        },
+        include: {
+            items: true,
+            client: true,
+            user: {
+                select: {
+                    id: true,
+                    nama: true,
+                    email: true,
+                    role: true
+                }
+            },
+            customization: true,
+        }
+    })
+    return getInvoicePDF
+}
+
 export const InvoiceDataDetails = async (id: number) => {
     const detailInvoice = await prisma.invoice.findUnique({
         where: {
