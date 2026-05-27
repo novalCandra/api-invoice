@@ -94,19 +94,16 @@ model activity_log {
   userId      Int
   invoiceId   Int
   event_type  activity_logType
-  event_name  String
-  description String
-  client_name String
-  amount      Decimal
-  details     Json
+  event_name  String?
+  description String?
+  client_name String?
+  amount      Decimal?
+  details     Json?
   create_at   DateTime         @default(now())
-  event_date  DateTime
-  event_time  DateTime
+  event_date  DateTime?
+  event_time  DateTime?
   invoice     invoice          @relation(fields: [invoiceId], references: [id])
   user        user             @relation(fields: [userId], references: [id])
-
-  @@index([invoiceId], map: "activity_log_invoiceId_fkey")
-  @@index([userId], map: "activity_log_userId_fkey")
 }
 
 model conversations {
