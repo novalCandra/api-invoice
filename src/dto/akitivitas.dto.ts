@@ -9,6 +9,11 @@ export class ResponGetAktivitasDTO {
     date: Date;
     time: Date;
     createdAt: Date
+    invoive: {
+        date: string;
+        clientName: string;
+        description: string;
+    }
 
     constructor(AktivitasType: any) {
         this.id = AktivitasType.id
@@ -21,6 +26,11 @@ export class ResponGetAktivitasDTO {
         this.date = AktivitasType.event_date
         this.time = AktivitasType.event_time
         this.createdAt = AktivitasType.create_at
+        this.invoive = {
+            clientName: AktivitasType.invoice?.client_name,
+            date: AktivitasType.invoice?.date,
+            description: AktivitasType.invoice?.description
+        }
     }
 }
 

@@ -36,7 +36,6 @@ export const getAllLogAktivitasServices = async (userId: number, invoiceId: numb
     }
 
     return getLogAktivitas.map((getLogAktivitas) => new ResponGetAktivitasDTO(getLogAktivitas))
-    // return getLogAktivitas
 }
 
 export const getAllInvoiceAktivitas = async (invoiceId: number) => {
@@ -44,7 +43,18 @@ export const getAllInvoiceAktivitas = async (invoiceId: number) => {
         where: {
             ...(invoiceId && { invoiceId })
         },
+        include: {
+            invoice: {
+                select: {
+                    client_name: true,
+                    status: true,
+                    date: true,
+                    dueData: true
+                }
+            }
+        }
     })
 
     return AktivitasInvoice.map((AktivitasInvoice) => new ResponseInvoiveGetAktivitasDTO(AktivitasInvoice));
+    // return AktivitasInvoice
 }
