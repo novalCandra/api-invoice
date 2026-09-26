@@ -6,9 +6,9 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
-    seed: "tsx prisma/seed/Seeder.js"
+    seed: "tsx prisma/seed/Seeder.js",
   },
   datasource: {
-    url: env("DATABASE_URL"),
+    url: env("MYSQL_ADDON_URI"),
   },
 });
