@@ -1,6 +1,6 @@
 generator client {
-  provider     = "prisma-client"
-  output       = "../generated/prisma"
+  provider = "prisma-client"
+  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -28,6 +28,7 @@ model invoice {
   items            invoice_items[]
   invoiceReminders invoice_reminders[]
   payments         payments[]
+  queue            queue[]
 
   @@index([userId], map: "Invoice_userId_fkey")
   @@index([clientId], map: "invoice_clientId_fkey")
@@ -149,6 +150,7 @@ model user {
   invoices        invoice[]
   invoiceItems    invoice_items[]
   payments        payments[]
+  histories       history[]
   userPreferences user_preferences[]
 }
 
@@ -163,6 +165,38 @@ model client {
   update_at     DateTime        @updatedAt
   conversations conversations[]
   invoices      invoice[]
+}
+
+model history {
+  id             Int  @id @default(autoincrement())
+  invoiceId      Int
+  total_event    Int
+  payment_method Int
+  overdue        Int
+  user           user @relation(fields: [userId], references: [id])
+  userId         Int
+}
+
+model queue {
+  id            Int     @id @default(autoincrement())
+  invoiceId     Int
+  total_pending Int
+  overdue       Int
+  total_amount  Int
+  invoice       invoice @relation(fields: [invoiceId], references: [id], map: "Queue_invoiceId_fkey")
+
+  @@index([invoiceId], map: "Queue_invoiceId_fkey")
+}
+
+model queuecategory {
+  id     Int                  @id @default(autoincrement())
+  status queuecategory_status @default(pending)
+}
+
+enum queuecategory_status {
+  urgent
+  pending
+  onTime
 }
 
 enum reminder_type_Invoice {
