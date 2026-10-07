@@ -35,6 +35,8 @@ export async function askAIRouter(userMessage: string) {
         }
     });
 
-    console.log("⬅️ AI RESPONSE:", response);
-    // return response.choices[0]?.message?.content ?? "";
+    if (response instanceof ReadableStream) {
+        throw new Error('Expected a non-streaming response');
+    }
+    return response?.choices[0]?.message?.content ?? "";
 }
