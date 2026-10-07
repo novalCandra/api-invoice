@@ -15,16 +15,22 @@
   "description": "",
   "dependencies": {
     "@faker-js/faker": "^10.4.0",
+    "@openrouter/agent": "^0.11.0",
     "@prisma/adapter-mariadb": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "basic-ftp": "^6.2.2",
     "bcrypt": "^6.0.0",
+    "body-parser": "^2.3.0",
+    "brace-expansion": "^5.0.12",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "mariadb": "^3.5.3",
     "nodemon": "^3.1.14",
     "prisma-client": "^0.0.0",
-    "puppeteer": "^24.43.1",
+    "proxy-addr": "^2.0.8",
+    "ws": "^8.22.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
