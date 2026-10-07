@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import { WebSocketServer } from "ws"
 import AuthRouter from "./router/AuthRouter.js";
 import InvoiceRouter from "./router/InvoiceRouter.js";
 import ClientRouter from "./router/ClientRouter.js";
@@ -11,7 +12,7 @@ import InvoiceItemRouter from "./router/InvoiceItemRouter.js";
 import InvoiceReminderRouter from "./router/InvoiceReminderRouter.js";
 import userPreferenceRouter from "./router/userPreferenceRouter.js";
 import conversationRouter from "./router/conversationRouter.js";
-import puppeteer from "puppeteer";
+import { askAIRouter } from "./router/ai.route.js"
 const app = express();
 const port = 2000;
 
@@ -38,6 +39,37 @@ app.get("/", (req, res) => {
   res.send("EXPRESS INVOICE");
 });
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`BE BERJALAN PORT : ${port}`);
 });
+
+// WEB SOCKETS
+const wss = new WebSocketServer({ server, });
+wss.on("connection", (socket) => {
+  socket.on("message", async (message) => {
+    try {
+      const data = JSON.parse(message.toString());
+      console.log(`USERS :`, data)
+      if (data.type !== "chat") {
+        return
+      }
+
+      const userMessage = data.content;
+      const responseAiMessage = await askAIRouter(userMessage);
+      console.log("⬅️ AI MESSAGE:", responseAiMessage);
+
+      socket.send(
+        JSON.stringify({
+          type: "assistant",
+          content: responseAiMessage
+        })
+      )
+    } catch (error) {
+      console.error(error?.message)
+    }
+  })
+
+  socket.off("close", () => {
+    console.log("Clined Conneted")
+  })
+})
